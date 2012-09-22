@@ -2,19 +2,13 @@ import webapp2
 import urllib
 from google.appengine.ext.webapp import template
 
+from BeautifulSoup import BeautifulSoup
+
 
 def strip_html(string):
-    new_string = ""
-    start = 0
-    end = 0
-    while True:
-        try:
-            start = string.index("&lt;", end)
-            new_string += string[end:start]
-            end = string.index("&gt;", start) + 4
-        except:
-            break
-    return new_string
+    string = string.replace('&lt;', '<')
+    string = string.replace('&gt;', '>')
+    return "".join(BeautifulSoup(string).findAll(text=True))
 
 
 def clean_feed(feed):
@@ -41,13 +35,25 @@ def clean_feed(feed):
 
 
 FEED_URL = {}
-FEED_URL['astro-ph'] = "http://localhost/~tom/astro-ph"
+FEED_URL['astro-ph'] = "http://arxiv.org/rss/astro-ph"
+FEED_URL['astro-ph.CO'] = "http://arxiv.org/rss/astro-ph.CO"
+FEED_URL['astro-ph.EP'] = "http://arxiv.org/rss/astro-ph.EP"
+FEED_URL['astro-ph.GA'] = "http://arxiv.org/rss/astro-ph.GA"
+FEED_URL['astro-ph.HE'] = "http://arxiv.org/rss/astro-ph.HE"
+FEED_URL['astro-ph.IM'] = "http://arxiv.org/rss/astro-ph.IM"
+FEED_URL['astro-ph.SR'] = "http://arxiv.org/rss/astro-ph.SR"
 
 
 class FeedCleaner(webapp2.RequestHandler):
 
     def get(self, feed):
+
+        if feed not in FEED_URL:
+            self.response.write(template.render('templates/404.html', {'feed':feed}))
+            return
+
         feed = clean_feed(urllib.urlopen(FEED_URL[feed]).read())
+
         self.response.headers['Content-Type'] = 'text/xml'
         self.response.write(feed)
 
